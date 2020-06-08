@@ -1,0 +1,15 @@
+{
+  "name": "medcloudschalenge-optimizer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "predeploy": "rm -rf ./node_modules && yarn --production --platform=linux",
+    "deploy": "serverless deploy -v",
+    "postploy": "rm -rf node_modules && yarn"
+  },
+  "dependencies": {
+    "sharp": "^0.25.3"
+  },
+  "devDependencies": {}
+}
