@@ -29,7 +29,7 @@ export default {
 	config: {
 		disk: {},
 		aws: {
-			bucket: 'medcloudsannexes', // Bucket do cdn
+			bucket: 'medcloudchallenge', // Bucket do cdn
 		},
 	},
 } as IUploadConfig;

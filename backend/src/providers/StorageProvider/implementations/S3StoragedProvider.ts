@@ -16,21 +16,21 @@ class DiskStorageProvider implements IStorageProvider {
 	public async saveFile(file: Express.Multer.File): Promise<string> {
 		const fileHash = crypto.randomBytes(20).toString('hex');
 		const fileName = `${fileHash}${extname(file.originalname)}`;
+		const buffer = Buffer.from(file.buffer.toJSON().data);
 
 		if (!file.mimetype) {
 			throw new Error('File not found');
 		}
 
-		const persistensed = await this.client
+		await this.client
 			.putObject({
 				Bucket: uploadConfig.config.aws.bucket, // Nome do bucket no CDN,
 				Key: `uploads/${fileName}`,
 				// ACL: 'public-read', // Permissões
-				Body: file.buffer,
+				Body: buffer,
 				ContentType: file.mimetype,
 			})
 			.promise();
-		console.log(persistensed);
 
 		return `${fileHash}.jpg`;
 	}

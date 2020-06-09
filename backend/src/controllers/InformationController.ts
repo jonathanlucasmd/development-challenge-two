@@ -70,11 +70,11 @@ export default class InformationController {
 		request: Request,
 		response: Response
 	): Promise<Response> {
-		const { date, doctor, description } = JSON.parse(request.body.form);
-		const { id } = request.params;
-		const { file } = request;
-
 		try {
+			const { file } = request;
+			const { id } = request.params;
+			const { date, doctor, description } = JSON.parse(request.body.form);
+
 			if (!(date && id && doctor && description)) {
 				throw Error('All fields should be filled');
 			}
@@ -87,7 +87,6 @@ export default class InformationController {
 				.promise();
 
 			if (!user) {
-				console.log(user);
 				throw Error('Patient not found');
 			}
 

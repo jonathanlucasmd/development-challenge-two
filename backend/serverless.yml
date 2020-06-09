@@ -12,6 +12,7 @@ provider:
   iamRoleStatements:
     - Effect: "Allow"
       Action:
+        - s3:*
         - dynamodb:DescribeTable
         - dynamodb:Scan
         - dynamodb:GetItem
@@ -25,12 +26,30 @@ functions:
   app:
     handler: serverless.handler
     events:
-      - http: 'POST /'
-      - http: 'POST /exam/{id}'
-      - http: 'GET /'
-      - http: 'GET /annex/{filename}'
-      - http: 'PUT /{id}'
-      - http: 'DELETE /{id}'
+      - http:
+          method: POST
+          path: /
+          cors: true
+      - http:
+          method: POST
+          path: /exam/{id}
+          integration: lambda
+      - http:
+          method: GET
+          path: /
+          cors: true
+      - http:
+          method: GET
+          path: /annex/{filename}
+          cors: true
+      - http:
+          method: PUT
+          path: /{id}
+          cors: true
+      - http:
+          method: DELETE
+          path: /{id}
+          cors: true
 
 resources:
   Resources:
@@ -47,5 +66,6 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
         TableName: ${self:custom.settings.TABLE}
-
+plugins:
+  - serverless-offline
 

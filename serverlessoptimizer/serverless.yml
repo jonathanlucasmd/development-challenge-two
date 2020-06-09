@@ -2,12 +2,12 @@ service: medcloudserverlessfunctions
 
 custom:
   settings:
-    BUCKET: medcloudsannexes
+    BUCKET: medcloudchallenge
 
 provider:
   name: aws
   runtime: nodejs12.x
-  memorySize: 256
+  memorySize: 512
   region: us-east-1
   iamRoleStatements: 
     - Effect: Allow
@@ -20,22 +20,22 @@ functions:
   optimize:
     handler: handler.optimize
     environment: 
-      bucket: medcloudsannexes
+      bucket: medcloudchallenge
     events:
       - s3:
-          bucket: medcloudsannexes
+          bucket: medcloudchallenge
           event: s3:ObjectCreated:*
           rules:
             - prefix: uploads/
             - suffix: .jpg
       - s3:
-          bucket: medcloudsannexes
+          bucket: medcloudchallenge
           event: s3:ObjectCreated:*
           rules:
             - prefix: uploads/
             - suffix: .jpeg
       - s3:
-          bucket: medcloudsannexes
+          bucket: medcloudchallenge
           event: s3:ObjectCreated:*
           rules:
             - prefix: uploads/

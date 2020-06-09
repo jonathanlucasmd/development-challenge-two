@@ -27,22 +27,17 @@ async function optimizeImage({file, key}){
 
 
 module.exports.optimize = async ({ Records: records }, context) => {
-  console.log(records)
   try {
     await Promise.all(
       records.map(async record => {
         const { key } = record.s3.object;
-
-        console.log(record.s3.object)
-
-        console.log("antes",key)
 
         const file = await S3.getObject({
           Bucket: process.env.bucket,
           Key: key
         }).promise();
 
-        console.log("depois", key)
+    
 
         if(extname(key) === '.jpg' || extname(key) === '.jpeg' || extname(key) === '.png'  ) {
           await optimizeImage({file, key})

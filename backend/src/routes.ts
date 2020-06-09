@@ -17,6 +17,11 @@ route.post(
 	upload.single('annex'),
 	informationController.storeInformation
 );
+// route.post(
+// 	'/annex/:id',
+// 	upload.single('annex'),
+// 	informationController.storeAnnex
+// );
 
 route.put('/:id', informationController.update);
 route.delete('/:id', informationController.delete);
