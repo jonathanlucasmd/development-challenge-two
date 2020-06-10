@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://2lhsha173k.execute-api.us-east-1.amazonaws.com/dev',
+  baseURL: process.env.MEDCLOUD_API_URL,
 });
 
 export default api;
