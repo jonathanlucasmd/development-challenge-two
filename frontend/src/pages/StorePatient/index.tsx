@@ -67,7 +67,6 @@ const StorePatient: React.FC = () => {
       }
       setPhone(formatedNumber);
     }
-    setPhone(onlyNums);
   }, []);
 
   const handleCpf = useCallback((event) => {
@@ -133,7 +132,11 @@ const StorePatient: React.FC = () => {
               className={classes.textField}
               helperText="Apenas Números"
             />
-            <DatePicker label="Data de nascimento" saveDate={setSelectedDate} />
+            <DatePicker
+              initialDate={selectedDate}
+              label="Data de nascimento"
+              saveDate={setSelectedDate}
+            />
             <Button
               type="submit"
               variant="contained"

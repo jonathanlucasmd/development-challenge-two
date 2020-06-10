@@ -49,6 +49,7 @@ const EditInformation: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(
     new Date(Date.now()),
   );
+  const [birthdate, setBirthdate] = useState<Date | null>(new Date(Date.now()));
 
   useEffect(() => {
     const storagedPatients = localStorage.getItem('@Medcloud:patients');
@@ -59,7 +60,10 @@ const EditInformation: React.FC = () => {
           (storagedPatient: IData) => storagedPatient.id === params.id,
         );
         setName(patient.name);
-        setCpf(patient.age);
+        setCpf(patient.cpf);
+        setAddress(patient.address);
+        setPhone(patient.phone);
+        setBirthdate(new Date(patient.birthdate));
       }
     }
   }, [params]);
@@ -127,7 +131,7 @@ const EditInformation: React.FC = () => {
         name,
         cpf,
         address,
-        birthdate: selectedDate,
+        birthdate,
         phone,
       });
       if (response.status === 200) {
@@ -141,12 +145,13 @@ const EditInformation: React.FC = () => {
           patients[index].cpf = cpf;
           patients[index].address = address;
           patients[index].phone = phone;
+          patients[index].birthdate = birthdate;
 
           localStorage.setItem('@Medcloud:patients', JSON.stringify(patients));
         }
       }
     },
-    [name, cpf, address, selectedDate, phone, params],
+    [name, cpf, address, birthdate, phone, params],
   );
 
   return (
@@ -155,7 +160,11 @@ const EditInformation: React.FC = () => {
         <form className={classes.formControl}>
           <FormGroup>
             <FormLabel className={classes.formLabel}>Anexar Exame</FormLabel>
-            <DatePicker label="Data do exame" saveDate={setSelectedDate} />
+            <DatePicker
+              initialDate={selectedDate}
+              label="Data do exame"
+              saveDate={setSelectedDate}
+            />
             <TextField
               id="doctor"
               label="Médico"
@@ -252,7 +261,11 @@ const EditInformation: React.FC = () => {
               className={classes.textFieldAnnex}
               helperText="Apenas Números"
             />
-            <DatePicker label="Data de nascimento" saveDate={setSelectedDate} />
+            <DatePicker
+              initialDate={birthdate}
+              label="Data de nascimento"
+              saveDate={setBirthdate}
+            />
             <Button
               type="submit"
               variant="contained"

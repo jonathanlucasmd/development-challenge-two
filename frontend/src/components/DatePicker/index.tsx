@@ -8,16 +8,16 @@ import {
 interface IProps {
   saveDate: React.Dispatch<React.SetStateAction<Date | null>>;
   label: string;
+  initialDate: Date | null;
 }
 
-const DatePickers: React.FC<IProps> = ({ saveDate, ...rest }: IProps) => {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(
-    new Date(Date.now()),
-  );
-
+const DatePickers: React.FC<IProps> = ({
+  saveDate,
+  initialDate,
+  ...rest
+}: IProps) => {
   const handleDateChange = useCallback(
     (date: Date | null) => {
-      setSelectedDate(date);
       saveDate(date);
     },
     [saveDate],
@@ -31,7 +31,7 @@ const DatePickers: React.FC<IProps> = ({ saveDate, ...rest }: IProps) => {
         margin="normal"
         format="dd/MM/yyyy"
         id="date-picker-inline"
-        value={selectedDate}
+        value={initialDate}
         {...rest}
         onChange={handleDateChange}
         KeyboardButtonProps={{
