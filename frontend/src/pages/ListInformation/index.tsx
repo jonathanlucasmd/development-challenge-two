@@ -1,12 +1,18 @@
-import React from 'react';
-import { Container, Button } from '@material-ui/core';
-import { makeStyles, createStyles, Theme } from '@material-ui/core/styles';
+import React, { useCallback, useState, useEffect } from 'react';
+import { AppBar, Typography, Container, Button } from '@material-ui/core';
+import { makeStyles, createStyles } from '@material-ui/core/styles';
 import { NavLink } from 'react-router-dom';
-import Bar from './SearchBar';
 import Table from './ColapsedTable';
+import api from '../../services/api';
 
-const useStyles = makeStyles((theme: Theme) =>
+const useStyles = makeStyles(() =>
   createStyles({
+    appbar: {
+      background: '#3700B3',
+      display: 'flex',
+      alignItems: 'center',
+      padding: '8px',
+    },
     gridContainer: {
       width: '100%',
       margin: 0,
@@ -27,12 +33,79 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-const ListInformation: React.FC = () => {
+interface IData {
+  id: string;
+  name: string;
+  cpf: string;
+  phone: string;
+  address: string;
+  birthdate: string;
+  exams: IExam[];
+}
+
+interface IExam {
+  id: string;
+  date: string;
+  doctor: string;
+  description: number;
+  annex: string | null;
+}
+
+const ListPatients: React.FC = () => {
   const classes = useStyles();
+
+  const [patients, setPatients] = useState<IData[]>((): IData[] => {
+    const storagedPatients = localStorage.getItem('@Medcloud:patients');
+
+    if (storagedPatients) {
+      return JSON.parse(storagedPatients);
+    }
+    return [] as IData[];
+  });
+
+  const handleDelete = useCallback(
+    ({ id }) => {
+      api.delete(`/${id}`);
+      const index = patients.findIndex((patient) => patient.id === id);
+      patients.splice(index, 1);
+      setPatients([...patients]);
+    },
+    [patients],
+  );
+  const handleDeleteExam = useCallback(
+    async ({ patientId, examId }) => {
+      api.delete(`/exam/?patient=${patientId}&exam=${examId}`);
+
+      const patientIndex = patients.findIndex(
+        (patient) => patient.id === patientId,
+      );
+      const examIndex = patients[patientIndex].exams.findIndex(
+        (exam) => exam.id === examId,
+      );
+
+      patients[patientIndex].exams.splice(examIndex, 1);
+      setPatients([...patients]);
+    },
+    [patients],
+  );
+
+  useEffect((): void => {
+    api.get('/').then((response) => {
+      if (response.status === 200) {
+        setPatients(response.data);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('@Medcloud:patients', JSON.stringify(patients));
+  }, [patients]);
 
   return (
     <>
-      <Bar />
+      <AppBar position="fixed" className={classes.appbar}>
+        <Typography variant="h4">MedCloud Challenge</Typography>
+      </AppBar>
       <Container
         style={{
           padding: 16,
@@ -41,7 +114,11 @@ const ListInformation: React.FC = () => {
           justifyContent: 'center',
         }}
       >
-        <Table />
+        <Table
+          handleDelete={handleDelete}
+          handleDeleteExam={handleDeleteExam}
+          patients={patients}
+        />
       </Container>
       <Container className={classes.footerButtom}>
         <NavLink to="/newpatient">
@@ -54,4 +131,4 @@ const ListInformation: React.FC = () => {
   );
 };
 
-export default ListInformation;
+export default ListPatients;

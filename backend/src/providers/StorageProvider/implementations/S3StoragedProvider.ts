@@ -39,7 +39,7 @@ class DiskStorageProvider implements IStorageProvider {
 		await this.client
 			.deleteObject({
 				Bucket: uploadConfig.config.aws.bucket,
-				Key: file,
+				Key: `compressed/${file}`,
 			})
 			.promise();
 	}

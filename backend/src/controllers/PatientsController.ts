@@ -12,6 +12,7 @@ const db = new AWS.DynamoDB.DocumentClient({
 const storageProvider = new S3StoragedProvider();
 
 interface IInformations {
+	id: string;
 	date: string;
 	doctor: string;
 	description: number;
@@ -21,8 +22,8 @@ interface IInformations {
 export default class InformationController {
 	public async create(request: Request, response: Response): Promise<Response> {
 		try {
-			const { name, cpf, age } = request.body;
-			if (!(name && cpf && age)) {
+			const { name, cpf, birthdate, phone, address } = request.body;
+			if (!(name && cpf && birthdate && phone && address)) {
 				throw Error('All fields should be filled');
 			}
 
@@ -37,30 +38,32 @@ export default class InformationController {
 				FilterExpression: '#cpf = :cpf ',
 			};
 
-			const hasInformation = await db.scan(params).promise();
+			const hasPatient = await db.scan(params).promise();
 
-			if (hasInformation.Count) {
-				throw new Error('User information already exist');
+			if (hasPatient.Count) {
+				throw new Error('Patient already exist');
 			}
 
-			const information = {
+			const patient = {
 				id: uuid(),
 				createdAt: new Date().toISOString(),
 				updatedAt: new Date().toISOString(),
 				cpf,
 				name,
-				age,
-				informations: [],
+				phone,
+				address,
+				birthdate,
+				exams: [],
 			};
 
 			const databaseResponse = await db
 				.put({
 					TableName: databaseConfig.tableName,
-					Item: information,
+					Item: patient,
 				})
 				.promise();
 
-			return response.json({ databaseResponse, information });
+			return response.json({ databaseResponse, patient });
 		} catch (err) {
 			return response.status(400).json({ error: err.message });
 		}
@@ -97,7 +100,7 @@ export default class InformationController {
 
 			const informations = [
 				...user.informations,
-				{ date, doctor, description, annex: filename || null },
+				{ id: uuid(), date, doctor, description, annex: filename || null },
 			];
 
 			const params = {
@@ -135,27 +138,32 @@ export default class InformationController {
 	}
 
 	public async url(request: Request, response: Response): Promise<Response> {
-		const { filename } = request.params;
-		return response.json({
-			url: await storageProvider.getSignedUrl(`compressed/${filename}`),
-		});
+		try {
+			const { filename } = request.params;
+			const url = await storageProvider.getSignedUrl(`compressed/${filename}`);
+			return response.json({
+				url,
+			});
+		} catch (err) {
+			return response.status(400).json({ error: err.message });
+		}
 	}
 
 	public async update(request: Request, response: Response): Promise<Response> {
 		try {
-			const { name, age } = request.body;
+			const { name, cpf, phone, address, birthdate } = request.body;
 			const { id } = request.params;
 
-			if (!(name && id && id)) {
+			if (!(id && name && cpf && phone && address && birthdate)) {
 				throw new Error('All fields should be filled');
 			}
 
-			const { Item: user } = await db
+			const { Item: patient } = await db
 				.get({ TableName: databaseConfig.tableName, Key: { id } })
 				.promise();
 
-			if (!user) {
-				throw new Error('User not found ');
+			if (!patient) {
+				throw new Error('Patient not found ');
 			}
 
 			const params = {
@@ -164,15 +172,22 @@ export default class InformationController {
 				},
 				TableName: databaseConfig.tableName,
 				ExpressionAttributeNames: {
-					'#age': 'age',
+					'#cpf': 'cpf',
+					'#phone': 'phone',
+					'#address': 'address',
+					'#birthdate': 'birthdate',
 					'#name': 'name',
 				},
 				ConditionExpression: 'attribute_exists(id)',
 				ExpressionAttributeValues: {
 					':patientName': name,
-					':age': age,
+					':cpf': cpf,
+					':phone': phone,
+					':address': address,
+					':birthdate': birthdate,
 				},
-				UpdateExpression: 'SET #name = :patientName, #age = :age',
+				UpdateExpression:
+					'SET #name = :patientName, #birthdate = :birthdate, #cpf = :cpf, #phone = :phone, #address = :address',
 				ReturnValues: 'ALL_NEW',
 			};
 
@@ -188,16 +203,15 @@ export default class InformationController {
 	public async delete(request: Request, response: Response): Promise<Response> {
 		try {
 			const { id } = request.params;
-			console.log(id);
 
-			const { Item: user } = await db
+			const { Item: patient } = await db
 				.get({
 					TableName: databaseConfig.tableName,
 					Key: { id },
 				})
 				.promise();
 
-			if (!user) {
+			if (!patient) {
 				throw new Error('User not found');
 			}
 
@@ -205,6 +219,52 @@ export default class InformationController {
 				TableName: databaseConfig.tableName,
 				Key: { id },
 			}).promise();
+
+			return response.status(204).send();
+		} catch (err) {
+			return response.status(400).json({ error: err.message });
+		}
+	}
+
+	public async deleteInformation(
+		request: Request,
+		response: Response
+	): Promise<Response> {
+		try {
+			const { patient: patientId, exam: examId } = request.query;
+			const { Item: patient } = await db
+				.get({
+					TableName: databaseConfig.tableName,
+					Key: { id: patientId },
+				})
+				.promise();
+
+			if (!patient) {
+				throw new Error('User not found');
+			}
+
+			const index = patient.informations.findIndex(
+				(info: IInformations) => info.id === examId
+			);
+
+			storageProvider.deleteFile(patient.informations[index].annex);
+
+			patient.informations.splice(index, 1);
+
+			const params = {
+				Key: {
+					id: patientId,
+				},
+				TableName: databaseConfig.tableName,
+				ConditionExpression: 'attribute_exists(id)',
+				UpdateExpression: 'SET informations = :informations',
+				ExpressionAttributeValues: {
+					':informations': patient.informations,
+				},
+				ReturnValues: 'ALL_NEW',
+			};
+
+			db.update(params).promise();
 
 			return response.status(204).send();
 		} catch (err) {

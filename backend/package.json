@@ -11,7 +11,7 @@
     "start": "ts-node ./src/server.ts",
     "typeorm": "ts-node-dev ./node_modules/typeorm/cli.js",
     "predeploy": "cp .env ./dist && cp package.json ./dist && cp serverless.yml ./dist && yarn --cwd ./dist --production --platform=linux",
-    "deploy": "cd ./dist && serverless deploy -v",
+    "deploy": "tsc && cd ./dist && serverless deploy -v",
     "postploy": "rm -rf ./dist/node_modules ./dist/serverless.yml ./dist/package.json",
     "removeserver": "cd ./dist && serverless remove"
   },

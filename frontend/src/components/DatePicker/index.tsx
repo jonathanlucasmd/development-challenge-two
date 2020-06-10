@@ -5,14 +5,23 @@ import {
   KeyboardDatePicker,
 } from '@material-ui/pickers';
 
-const DatePickers: React.FC = () => {
+interface IProps {
+  saveDate: React.Dispatch<React.SetStateAction<Date | null>>;
+  label: string;
+}
+
+const DatePickers: React.FC<IProps> = ({ saveDate, ...rest }: IProps) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(
     new Date(Date.now()),
   );
 
-  const handleDateChange = useCallback((date: Date | null) => {
-    setSelectedDate(date);
-  }, []);
+  const handleDateChange = useCallback(
+    (date: Date | null) => {
+      setSelectedDate(date);
+      saveDate(date);
+    },
+    [saveDate],
+  );
 
   return (
     <MuiPickersUtilsProvider utils={DateFnsUtils}>
@@ -22,8 +31,8 @@ const DatePickers: React.FC = () => {
         margin="normal"
         format="dd/MM/yyyy"
         id="date-picker-inline"
-        label="Data do exame"
         value={selectedDate}
+        {...rest}
         onChange={handleDateChange}
         KeyboardButtonProps={{
           'aria-label': 'change date',

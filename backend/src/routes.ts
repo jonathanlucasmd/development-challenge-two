@@ -1,29 +1,24 @@
 import { Router } from 'express';
 import multer from 'multer';
 import uploadConfig from './config/upload';
-import InformationController from './controllers/InformationController';
+import PatientsController from './controllers/PatientsController';
+import ExamsController from './controllers/ExamsController';
 
-const informationController = new InformationController();
+const patientsController = new PatientsController();
+const examsController = new ExamsController();
 const upload = multer(uploadConfig.multer);
 
 const route = Router();
 
-route.get('/', informationController.index);
-route.get('/annex/:filename', informationController.url);
+route.get('/', patientsController.index);
+route.get('/annex/:filename', patientsController.url);
 
-route.post('/', informationController.create);
-route.post(
-	'/exam/:id',
-	upload.single('annex'),
-	informationController.storeInformation
-);
-// route.post(
-// 	'/annex/:id',
-// 	upload.single('annex'),
-// 	informationController.storeAnnex
-// );
+route.post('/', patientsController.create);
+route.post('/exam/:id', upload.single('annex'), examsController.storeExam);
 
-route.put('/:id', informationController.update);
-route.delete('/:id', informationController.delete);
+route.put('/:id', patientsController.update);
+
+route.delete('/exam/', examsController.deleteExam);
+route.delete('/:id', patientsController.delete);
 
 export default route;

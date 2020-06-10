@@ -33,7 +33,6 @@ functions:
       - http:
           method: POST
           path: /exam/{id}
-          integration: lambda
       - http:
           method: GET
           path: /
@@ -49,6 +48,10 @@ functions:
       - http:
           method: DELETE
           path: /{id}
+          cors: true
+      - http:
+          method: DELETE
+          path: /exam/{id}
           cors: true
 
 resources:

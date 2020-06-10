@@ -9,45 +9,71 @@ import {
 } from '@material-ui/core';
 import { Link } from 'react-router-dom';
 import { ArrowBack } from '@material-ui/icons';
+
 import api from '../../services/api';
+import DatePicker from '../../components/DatePicker';
 import useStyles from './styles';
 
-const StoreInformation: React.FC = () => {
+const StorePatient: React.FC = () => {
   const classes = useStyles();
   const [name, setName] = useState('');
-  const [age, setAge] = useState('');
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
   const [cpf, setCpf] = useState('');
+  const [selectedDate, setSelectedDate] = useState<Date | null>(
+    new Date(Date.now()),
+  );
 
   const handleSubmit = useCallback(
     async (event) => {
       event.preventDefault();
       try {
-        const response = await api.post('/', { name, age, cpf });
-        setAge('');
+        await api.post('/', {
+          name,
+          phone,
+          address,
+          birthdate: selectedDate,
+          cpf,
+        });
+        setAddress('');
+        setPhone('');
         setCpf('');
         setName('');
-        console.log(response);
       } catch (err) {
         console.log(err);
       }
     },
-    [age, cpf, name],
+    [name, phone, address, selectedDate, cpf],
   );
 
-  const handleAge = useCallback((event) => {
+  const handleAddress = useCallback((event) => {
+    setAddress(event.target.value);
+  }, []);
+
+  const handlePhone = useCallback((event) => {
     const onlyNums = event.target.value.replace(/[^0-9]/g, '');
-    if (onlyNums.length < 10) {
-      setAge(onlyNums);
+    let formatedNumber;
+    if (onlyNums.length < 12) {
+      if (onlyNums.length === 10) {
+        formatedNumber = onlyNums.replace(
+          /(\d{2})(\d{4})(\d{4})/,
+          '($1) $2-$3',
+        );
+      } else if (onlyNums.length === 11) {
+        formatedNumber = onlyNums.replace(
+          /(\d{2})(\d{5})(\d{4})/,
+          '($1) $2-$3',
+        );
+      }
+      setPhone(formatedNumber);
     }
+    setPhone(onlyNums);
   }, []);
 
   const handleCpf = useCallback((event) => {
     const onlyNums = event.target.value.replace(/[^0-9]/g, '');
-    if (onlyNums.length < 10) {
+    if (onlyNums.length < 12) {
       setCpf(onlyNums);
-    } else if (onlyNums.length === 10) {
-      const number = onlyNums.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
-      setCpf(number);
     }
   }, []);
 
@@ -62,6 +88,7 @@ const StoreInformation: React.FC = () => {
               size="medium"
               style={{
                 background: '#4024ffa4',
+                marginTop: 16,
               }}
             >
               <ArrowBack />
@@ -89,14 +116,24 @@ const StoreInformation: React.FC = () => {
               helperText="Apenas Números"
             />
             <TextField
-              id="age"
-              label="Idade"
-              value={age}
-              onChange={handleAge}
+              id="address"
+              label="Endereço"
+              multiline
+              value={address}
+              onChange={handleAddress}
+              variant="outlined"
+              className={classes.textField}
+            />
+            <TextField
+              id="phone"
+              label="Telefone"
+              value={phone}
+              onChange={handlePhone}
               variant="outlined"
               className={classes.textField}
               helperText="Apenas Números"
             />
+            <DatePicker label="Data de nascimento" saveDate={setSelectedDate} />
             <Button
               type="submit"
               variant="contained"
@@ -111,4 +148,4 @@ const StoreInformation: React.FC = () => {
   );
 };
 
-export default StoreInformation;
+export default StorePatient;

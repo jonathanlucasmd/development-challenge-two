@@ -10,27 +10,33 @@ const useStyles = makeStyles({
     margin: 0,
     padding: 0,
   },
+
   container: {
-    height: '100vh',
+    height: '100%',
     display: 'flex',
     alignItems: 'stretch',
     margin: 0,
     padding: 0,
-    background: '#FFF',
+    // background: '#FFF',
   },
+
   formContainer: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    maxWidth: '700px',
+    maxWidth: '600px',
+    background: 'inherit',
   },
+
   formControl: {
     margin: '80px',
     width: '340px',
     textAlign: 'center',
+    background: 'inherit',
   },
+
   textField: {
     margin: '8px',
 
@@ -76,6 +82,7 @@ const useStyles = makeStyles({
       background: fade('#2B09AC', 0.6),
     },
   },
+
   buttonSave: {
     padding: '8px',
     margin: '8px',

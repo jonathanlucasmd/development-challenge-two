@@ -9,14 +9,11 @@ import {
 } from '@material-ui/core';
 import { Link, useRouteMatch } from 'react-router-dom';
 import { ArrowBack } from '@material-ui/icons';
-import { DropzoneDialog } from 'material-ui-dropzone';
-import DateFnsUtils from '@date-io/date-fns';
-import {
-  MuiPickersUtilsProvider,
-  KeyboardDatePicker,
-} from '@material-ui/pickers';
+
 import useStyles from './styles';
 import api from '../../services/api';
+import DropZoneModal from '../../components/DropZoneModal';
+import DatePicker from '../../components/DatePicker';
 
 interface PatientParams {
   id: string;
@@ -33,7 +30,8 @@ interface IData {
   id: string;
   name: string;
   cpf: string;
-  age: number;
+  address: number;
+  phone: string;
   informations: IInformations[];
 }
 
@@ -41,12 +39,13 @@ const EditInformation: React.FC = () => {
   const { params } = useRouteMatch<PatientParams>();
 
   const classes = useStyles();
-  const [age, setAge] = useState('');
+  const [cpf, setCpf] = useState('');
   const [name, setName] = useState('');
   const [doctor, setDoctor] = useState('');
   const [description, setDescription] = useState('');
   const [files, setFiles] = useState<File[]>([]);
-  const [open, setOpen] = useState<boolean>(false);
+  const [address, setAddress] = useState('');
+  const [phone, setPhone] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | null>(
     new Date(Date.now()),
   );
@@ -60,31 +59,43 @@ const EditInformation: React.FC = () => {
           (storagedPatient: IData) => storagedPatient.id === params.id,
         );
         setName(patient.name);
-        setAge(patient.age);
+        setCpf(patient.age);
       }
     }
   }, [params]);
 
-  const handleAge = useCallback((event) => {
+  const handleCpf = useCallback((event) => {
     const onlyNums = event.target.value.replace(/[^0-9]/g, '');
-    if (onlyNums.length < 10) {
-      setAge(onlyNums);
+    if (onlyNums.length < 12) {
+      setCpf(onlyNums);
     }
   }, []);
 
-  const handleSave = useCallback(
-    (uploadedFiles): void => {
-      setOpen(!open);
-      setFiles(uploadedFiles);
-    },
-    [open],
-  );
-  const handleModal = useCallback((): void => {
-    setOpen(!open);
-  }, [open]);
+  const handleAddress = useCallback((event) => {
+    setAddress(event.target.value);
+  }, []);
 
-  const handleDateChange = useCallback((date: Date | null) => {
-    setSelectedDate(date);
+  const handlePhone = useCallback((event) => {
+    const onlyNums = event.target.value.replace(/[^0-9]/g, '');
+    let formatedNumber;
+    if (onlyNums.length < 12) {
+      if (onlyNums.length === 10) {
+        formatedNumber = onlyNums.replace(
+          /(\d{2})(\d{4})(\d{4})/,
+          '($1) $2-$3',
+        );
+      } else if (onlyNums.length === 11) {
+        formatedNumber = onlyNums.replace(
+          /(\d{2})(\d{5})(\d{4})/,
+          '($1) $2-$3',
+        );
+      }
+      setPhone(formatedNumber);
+    }
+  }, []);
+
+  const handleSave = useCallback((uploadedFiles): void => {
+    setFiles(uploadedFiles);
   }, []);
 
   const handleAddNewAnnex = useCallback(
@@ -97,7 +108,7 @@ const EditInformation: React.FC = () => {
         JSON.stringify({ doctor, date: selectedDate, description }),
       );
 
-      const response = await api.post(`/exam/${params.id}`, formData, {
+      await api.post(`/exam/${params.id}`, formData, {
         headers: {
           'content-type': 'multipart/form-data',
         },
@@ -105,8 +116,6 @@ const EditInformation: React.FC = () => {
       setFiles([]);
       setDoctor('');
       setDescription('');
-
-      console.log(response);
     },
     [params, files, selectedDate, description, doctor],
   );
@@ -114,8 +123,13 @@ const EditInformation: React.FC = () => {
   const handleUpdate = useCallback(
     async (event) => {
       event.preventDefault();
-      const response = await api.put(`/${params.id}`, { name, age });
-      console.log(response);
+      const response = await api.put(`/${params.id}`, {
+        name,
+        cpf,
+        address,
+        birthdate: selectedDate,
+        phone,
+      });
       if (response.status === 200) {
         const storagedPatients = localStorage.getItem('@Medcloud:patients');
         if (storagedPatients) {
@@ -124,12 +138,15 @@ const EditInformation: React.FC = () => {
             (patient: IData) => patient.id === params.id,
           );
           patients[index].name = name;
-          patients[index].age = age;
+          patients[index].cpf = cpf;
+          patients[index].address = address;
+          patients[index].phone = phone;
+
           localStorage.setItem('@Medcloud:patients', JSON.stringify(patients));
         }
       }
     },
-    [name, age, params],
+    [name, cpf, address, selectedDate, phone, params],
   );
 
   return (
@@ -137,32 +154,47 @@ const EditInformation: React.FC = () => {
       <Container className={classes.background}>
         <form className={classes.formControl}>
           <FormGroup>
-            <FormLabel className={classes.formLabel}>Dados Básicos</FormLabel>
+            <FormLabel className={classes.formLabel}>Anexar Exame</FormLabel>
+            <DatePicker label="Data do exame" saveDate={setSelectedDate} />
             <TextField
-              id="name"
-              label="Nome"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              id="doctor"
+              label="Médico"
+              value={doctor}
+              onChange={(e) => setDoctor(e.target.value)}
               variant="outlined"
               className={classes.textField}
               inputProps={{ color: '#fff' }}
             />
             <TextField
-              id="age"
-              label="Idade"
-              value={age}
-              onChange={handleAge}
+              id="description"
+              label="Descrição"
+              value={description}
+              multiline
+              onChange={(e) => setDescription(e.target.value)}
               variant="outlined"
               className={classes.textField}
-              helperText="Apenas Números"
+              inputProps={{ color: '#fff' }}
             />
+            <TextField
+              id="filename"
+              disabled
+              value={
+                files[0]
+                  ? files[0].name
+                  : 'Você pode anexar arquivos png/jpg/jpeg'
+              }
+              label="Arquivo"
+              className={classes.textField}
+              inputProps={{ color: '#fff' }}
+            />
+            <DropZoneModal onSave={handleSave} />
             <Button
               type="submit"
               variant="contained"
               className={classes.buttonSave}
-              onClick={handleUpdate}
+              onClick={handleAddNewAnnex}
             >
-              Salvar
+              Registrar
             </Button>
           </FormGroup>
         </form>
@@ -175,6 +207,7 @@ const EditInformation: React.FC = () => {
               size="medium"
               style={{
                 background: '#4024ffa4',
+                marginTop: 16,
               }}
             >
               <ArrowBack />
@@ -183,78 +216,50 @@ const EditInformation: React.FC = () => {
         </div>
         <form className={classes.formControl}>
           <FormGroup>
-            <FormLabel>Anexar Exame</FormLabel>
-
-            <MuiPickersUtilsProvider utils={DateFnsUtils}>
-              <KeyboardDatePicker
-                disableToolbar
-                variant="inline"
-                margin="normal"
-                format="dd/MM/yyyy"
-                id="date-picker-inline"
-                label="Data do exame"
-                value={selectedDate}
-                onChange={handleDateChange}
-                KeyboardButtonProps={{
-                  'aria-label': 'change date',
-                }}
-              />
-            </MuiPickersUtilsProvider>
-
+            <FormLabel className={classes.formLabel}>Dados Básicos</FormLabel>
             <TextField
-              id="doctor"
-              label="Médico"
-              value={doctor}
-              onChange={(e) => setDoctor(e.target.value)}
+              id="name"
+              label="Nome"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               variant="outlined"
               className={classes.textFieldAnnex}
             />
             <TextField
-              id="description"
-              label="Descrição"
-              value={description}
+              id="cpf"
+              label="CPF"
+              value={cpf}
+              onChange={handleCpf}
+              variant="outlined"
+              className={classes.textFieldAnnex}
+              helperText="Apenas Números"
+            />
+            <TextField
+              id="address"
+              label="Endereço"
               multiline
-              onChange={(e) => setDescription(e.target.value)}
+              value={address}
+              onChange={handleAddress}
               variant="outlined"
               className={classes.textFieldAnnex}
             />
-
             <TextField
-              id="filename"
-              disabled
-              value={
-                files[0]
-                  ? files[0].name
-                  : 'Você pode anexar arquivos png/jpg/jpeg'
-              }
-              label="Arquivo"
+              id="phone"
+              label="Telefone"
+              value={phone}
+              onChange={handlePhone}
+              variant="outlined"
+              className={classes.textFieldAnnex}
+              helperText="Apenas Números"
             />
-
-            <div>
-              <Button onClick={handleModal}>Anexar arquivo</Button>
-              <DropzoneDialog
-                fileObjects={[]}
-                open={open}
-                onSave={handleSave}
-                acceptedFiles={[
-                  // 'application/pdf',
-                  'image/jpg',
-                  'image/jpeg',
-                  'image/png',
-                ]}
-                showPreviews
-                maxFileSize={5000000}
-                filesLimit={1}
-                onClose={handleModal}
-              />
-            </div>
+            <DatePicker label="Data de nascimento" saveDate={setSelectedDate} />
             <Button
               type="submit"
               variant="contained"
               className={classes.buttonStore}
-              onClick={handleAddNewAnnex}
+              onClick={handleUpdate}
             >
-              Registrar
+              Salvar
             </Button>
           </FormGroup>
         </form>
